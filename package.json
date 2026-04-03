@@ -1,0 +1,6 @@
+{
+  "name": "dapa-checker",
+  "version": "1.0.0",
+  "description": "Bulk DA PA Spam Score checker",
+  "engines": { "node": ">=18" }
+}

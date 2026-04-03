@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DAPA Checker — Bulk DA PA & Spam Score Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<header class="header">
+  <div class="container">
+    <div class="logo">
+      <div class="logo-icon">D</div>
+      <div>
+        <div class="logo-name">DAPA Checker</div>
+        <div class="logo-sub">Bulk DA · PA · Spam Score</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="credits-box" id="creditsBox" style="display:none">
+        <span class="credits-label">Credits</span>
+        <span class="credits-val" id="creditsVal">—</span>
+      </div>
+      <button class="btn btn-outline" onclick="openSettings()">Settings</button>
+    </div>
+  </div>
+</header>
+
+<main class="container main">
+
+  <!-- Settings Panel -->
+  <div class="panel" id="settingsPanel">
+    <div class="panel-header">
+      <div class="panel-title">API Configuration</div>
+      <button class="panel-toggle" onclick="togglePanel('settingsPanel')">
+        <span id="settingsArrow">▲</span>
+      </button>
+    </div>
+    <div class="panel-body" id="settingsPanelBody">
+      <div class="field">
+        <label class="label">API Key</label>
+        <div class="input-group">
+          <input type="password" id="apiKeyInput" class="input" placeholder="Your 32-character API key"/>
+          <button class="btn btn-primary" onclick="saveAndVerify()">Save &amp; Verify</button>
+        </div>
+        <div class="field-hint">Get your key at My Account → API Details on tools.guestpostlinks.net</div>
+      </div>
+      <div class="verify-status" id="verifyStatus"></div>
+    </div>
+  </div>
+
+  <!-- Checker Panel -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Check URLs</div>
+      <div class="badge" id="urlCountBadge" style="display:none">0 URLs</div>
+    </div>
+    <div class="panel-body">
+      <div class="field">
+        <label class="label">URLs <span class="label-hint">— one per line, any format</span></label>
+        <textarea id="urlInput" class="textarea" placeholder="example.com&#10;https://ahrefs.com&#10;backlinko.com&#10;moz.com" oninput="updateCount()"></textarea>
+        <div class="url-meta">
+          <span class="field-hint" id="urlMeta">Paste URLs above. Batched automatically — 1 credit per URL.</span>
+          <span class="field-hint" id="dupNote" style="color:var(--amber)"></span>
+        </div>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-primary btn-lg" id="checkBtn" onclick="runCheck()">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Check URLs
+        </button>
+        <button class="btn btn-outline" onclick="clearInput()">Clear input</button>
+        <div class="progress-wrap" id="progressWrap" style="display:none">
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+          <span class="progress-label" id="progressLabel">0%</span>
+        </div>
+      </div>
+      <div class="alert alert-err" id="errAlert" style="display:none"></div>
+      <div class="alert alert-ok" id="okAlert" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- Results Panel -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Results <span class="record-count" id="recordCount"></span></div>
+      <div class="header-actions">
+        <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export CSV</button>
+        <button class="btn btn-outline btn-sm danger" onclick="clearAll()">Clear all</button>
+      </div>
+    </div>
+    <div class="panel-body" style="padding-bottom:0">
+
+      <div class="summary-grid" id="summaryGrid" style="display:none">
+        <div class="stat-card"><div class="stat-label">Total checked</div><div class="stat-val" id="sTot">0</div></div>
+        <div class="stat-card"><div class="stat-label">Avg DA</div><div class="stat-val" id="sDA">—</div></div>
+        <div class="stat-card"><div class="stat-label">Avg PA</div><div class="stat-val" id="sPA">—</div></div>
+        <div class="stat-card"><div class="stat-label">High DA (50+)</div><div class="stat-val" id="sHigh">0</div></div>
+        <div class="stat-card"><div class="stat-label">Clean spam (≤2)</div><div class="stat-val" id="sClean">0</div></div>
+      </div>
+
+      <div class="filters" id="filtersRow" style="display:none">
+        <input type="text" class="input filter-search" id="searchQ" placeholder="Search URL..." oninput="renderTable()"/>
+        <select class="select" id="sortBy" onchange="renderTable()">
+          <option value="ts_desc">Newest first</option>
+          <option value="ts_asc">Oldest first</option>
+          <option value="da_desc">DA: high → low</option>
+          <option value="da_asc">DA: low → high</option>
+          <option value="pa_desc">PA: high → low</option>
+          <option value="spam_asc">Spam: low → high</option>
+        </select>
+        <select class="select" id="filterDA" onchange="renderTable()">
+          <option value="">All DA</option>
+          <option value="high">High DA (50+)</option>
+          <option value="mid">Mid DA (25–49)</option>
+          <option value="low">Low DA (0–24)</option>
+        </select>
+        <select class="select" id="filterSpam" onchange="renderTable()">
+          <option value="">All spam</option>
+          <option value="ok">Clean (0–2)</option>
+          <option value="warn">Moderate (3–5)</option>
+          <option value="bad">High (6+)</option>
+        </select>
+      </div>
+
+      <div class="tbl-wrap" id="tblWrap" style="display:none">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>#</th><th>URL</th><th>DA</th><th>PA</th><th>Spam</th><th>Checked</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="tblBody"></tbody>
+        </table>
+      </div>
+
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="6" y="6" width="28" height="28" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="M13 20h14M13 14h14M13 26h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="empty-title">No results yet</div>
+        <div class="empty-sub">Enter your API key in Settings, paste URLs, and click Check.</div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <span>DAPA Checker · Powered by GuestPostLinks API</span>
+    <span>Data stored locally in your browser</span>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
