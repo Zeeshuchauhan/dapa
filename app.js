@@ -137,11 +137,19 @@ async function runCheck() {
       });
       const d = await r.json();
       if (d.success && d.data) {
-        d.data.forEach(item => {
+        // Normalise: API may return array or object keyed by URL
+        const items = Array.isArray(d.data)
+          ? d.data
+          : Object.values(d.data);
+
+        items.forEach(item => {
+          if (!item) return;
           const m   = item.metrics || {};
-          const idx = db.findIndex(x => x.url === item.original_url);
+          const url = item.original_url || item.url || '';
+          if (!url) return;
+          const idx = db.findIndex(x => x.url === url);
           const rec = {
-            url:  item.original_url,
+            url,
             da:   m.domain_authority ?? null,
             pa:   m.page_authority   ?? null,
             spam: m.spam_score       ?? null,
