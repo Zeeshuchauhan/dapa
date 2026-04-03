@@ -19,6 +19,9 @@ export default async function handler(req, res) {
       body: JSON.stringify(req.body),
     });
     const data = await response.json();
+    // Debug: log shape to Vercel function logs
+    console.log('API response keys:', Object.keys(data));
+    console.log('data.data type:', typeof data.data, Array.isArray(data.data));
     return res.status(response.status).json(data);
   } catch (e) {
     return res.status(500).json({ error: 'Proxy error: ' + e.message });
